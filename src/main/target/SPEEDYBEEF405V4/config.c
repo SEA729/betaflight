@@ -20,18 +20,35 @@
 
 #include <stdint.h>
 #include "platform.h"
+
+#ifdef USE_TARGET_CONFIG
+
+#include "io/serial.h"
+#include "pg/pinio.h"
+#include "pg/piniobox.h"
+#include "target.h"
+#include "flight/mixer.h"
+#include "osd/osd.h"
+#include "pg/motor.h"
+#include "config_helper.h"
 #include "drivers/io.h"
 #include "drivers/dma.h"
 #include "drivers/timer.h"
 #include "drivers/timer_def.h"
+#include "target.h"
 
-const timerHardware_t timerHardware[USABLE_TIMER_CHANNEL_COUNT] = {
-    
-    DEF_TIM(TIM4, CH1, PB6,  TIM_USE_MOTOR, 0, 0), // S1 
-    DEF_TIM(TIM4, CH2, PB7,  TIM_USE_MOTOR, 0, 0), // S2 
-    DEF_TIM(TIM3, CH3, PB0,  TIM_USE_MOTOR, 0, 0), // S3  
-    DEF_TIM(TIM3, CH4, PB1,  TIM_USE_MOTOR, 0, 0), // S4  
-
-    DEF_TIM(TIM1, CH1, PA8,  TIM_USE_LED, 0, 0),   // LED D(1,0) UP(2,6)
-    DEF_TIM(TIM8, CH2, PC7,  TIM_USE_PPM,   0, 0), // PPM
+#define  USE_TARGET_CONFIG
+static targetSerialPortFunction_t targetSerialPortFunction[] = {
+    { SERIAL_PORT_USART2, FUNCTION_RX_SERIAL },
+    { SERIAL_PORT_UART4, FUNCTION_MSP },
+    { SERIAL_PORT_UART5,  FUNCTION_ESC_SENSOR },
 };
+void targetConfiguration(void)
+{
+    pinioConfigMutable()->config[0] = PINIO_CONFIG_OUT_INVERTED | PINIO_CONFIG_MODE_OUT_PP;
+    pinioBoxConfigMutable()->permanentId[0] = BOXARM;
+    
+    targetSerialPortFunctionConfig(targetSerialPortFunction, ARRAYLEN(targetSerialPortFunction));
+    motorConfigMutable()->dev.motorPwmProtocol = PWM_TYPE_DSHOT300;
+}
+#endif
